@@ -59,6 +59,7 @@ export const typeDefs = gql`
     currency: Currency
     createdAt: String
     transferState: String
+    transferStateEnum: String
     transactionType: String
     errorCode: Int
     settlementWindowId: Int
@@ -86,6 +87,7 @@ export const typeDefs = gql`
     COMMITTED
     RESERVED
     SETTLED
+    RECEIVED
   }
 
   type Party {

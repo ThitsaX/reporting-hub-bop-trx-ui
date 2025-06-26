@@ -37,7 +37,7 @@ const transfersColumns = [
   },
   {
     label: 'State',
-    key: 'transferState',
+    key: 'transferStateEnum',
   },
   {
     label: 'Type',
@@ -344,6 +344,7 @@ const Transfers: FC<ConnectorProps> = ({
             sourceCurrency: filtersModel.sourceCurrency,
             targetCurrency: filtersModel.targetCurrency,
             transferState: filtersModel.transferState,
+            transactionType: filtersModel.transactionType,
             conversionState: filtersModel.conversionState,
             payeeFspId: filtersModel.payeeFSPId,
             payerFspId: filtersModel.payerFSPId,
