@@ -163,7 +163,7 @@ const TransferDetails: FC<ConnectorProps> = ({
             disabled
             type="text"
             label="Transfer State"
-            value={transferDetails.transferState || ''}
+            value={transferDetails.transferStateEnum || ''}
           />
           <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
             <FormField
@@ -409,7 +409,7 @@ const TransferDetails: FC<ConnectorProps> = ({
             disabled
             type="text"
             label="Transfer State"
-            value={transferDetails.transferState || ''}
+            value={transferDetails.transferStateEnum || ''}
           />
           <FormField
             disabled
@@ -591,7 +591,7 @@ const TransferDetails: FC<ConnectorProps> = ({
             disabled
             type="text"
             label="Transfer State"
-            value={transferDetails.transferState || ''}
+            value={transferDetails.transferStateEnum || ''}
             style={{
               width: '100px',
             }}
@@ -996,7 +996,7 @@ const TransferDetails: FC<ConnectorProps> = ({
             disabled
             type="text"
             label="Transfer State"
-            value={transferDetails.transferState || ''}
+            value={transferDetails.transferStateEnum || ''}
           />
         </FormField.Container>
 
