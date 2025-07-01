@@ -37,7 +37,7 @@ const transfersColumns = [
   },
   {
     label: 'State',
-    key: 'transferState',
+    key: 'transferStateEnum',
   },
   {
     label: 'Type',

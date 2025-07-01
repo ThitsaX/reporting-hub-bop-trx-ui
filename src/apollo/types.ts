@@ -86,6 +86,7 @@ export type Transfer = {
   lastUpdated?: Maybe<Scalars['DateTime']>;
   baseUseCase?: Maybe<Scalars['String']>;
   transferState?: Maybe<Scalars['String']>;
+  transferStateEnum?: Maybe<Scalars['String']>;
   transferStateChanges?: Maybe<Scalars['String']>;
   transactionType?: Maybe<Scalars['String']>;
   // errorCode?: Maybe<Scalars['Int']>;

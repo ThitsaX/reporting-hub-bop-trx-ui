@@ -13,8 +13,10 @@ export const GET_TRANSFER = gql`
       createdAt
       lastUpdated
       transferState
+      transferStateEnum
       transferStateChanges {
         transferState
+        transferStateEnum
         dateTime
         reason
       }
@@ -226,8 +228,10 @@ export const GET_TRANSFERS_WITH_EVENTS = gql`
       createdAt
       lastUpdated
       transferState
+      transferStateEnum
       transferStateChanges {
         transferState
+        transferStateEnum
         dateTime
         reason
       }
