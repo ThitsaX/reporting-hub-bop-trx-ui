@@ -464,8 +464,8 @@ const TransferDetails: FC<ConnectorProps> = ({
             type="text"
             label="Conversion Submitted Date"
             value={
-              transferDetails.createdAt
-                ? moment(transferDetails.conversions?.payer?.createdAt).local().format()
+              transferDetails.conversions?.payer?.createdAt
+                ? moment(transferDetails.conversions.payer.createdAt).local().format()
                 : ''
             }
           />
@@ -789,7 +789,11 @@ const TransferDetails: FC<ConnectorProps> = ({
               <FormField
                 disabled
                 type="text"
-                value={transferDetails.transferTerms?.expiration || ''}
+                value={
+                  transferDetails.transferTerms?.expiration
+                    ? moment(transferDetails.transferTerms.expiration).local().format()
+                    : ''
+                }
                 style={{ flex: 3, padding: '8px 10px', marginRight: '10px' }}
               />
             </FormField.Container>
@@ -942,7 +946,13 @@ const TransferDetails: FC<ConnectorProps> = ({
               <FormField
                 disabled
                 type="text"
-                value={transferDetails.conversions?.payer?.conversionTerms?.expiration}
+                value={
+                  transferDetails.conversions?.payer?.conversionTerms?.expiration
+                    ? moment(transferDetails.conversions.payer.conversionTerms.expiration)
+                        .local()
+                        .format()
+                    : ''
+                }
                 style={{ flex: 1, marginBottom: 0, padding: '8px 10px', marginRight: '10px' }}
               />
             </FormField.Container>

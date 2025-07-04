@@ -90,7 +90,7 @@ const transfersColumns = [
     label: 'Date Submitted',
     key: 'createdAt',
     fn: (rawValue: Number) => {
-      return `${rawValue ? moment(rawValue.toString()).local().format() : ''}`;
+      return rawValue ? moment(rawValue.toString()).local().format() : '';
     },
   },
 ];
