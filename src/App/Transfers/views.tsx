@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, useEffect } from 'react';
 import {
   Heading,
   Button,
@@ -13,9 +13,9 @@ import { connect } from 'react-redux';
 import withMount from 'hocs';
 import { State, Dispatch } from 'store/types';
 import { ReduxContext } from 'store';
-import { useLazyQuery } from '@apollo/client';
-import { GET_TRANSFER, GET_TRANSFERS_WITH_EVENTS } from 'apollo/query';
-import { Party, Transfer } from 'apollo/types';
+import { useLazyQuery, useQuery } from '@apollo/client';
+import { GET_TRANSFER, GET_TRANSFERS_FOR_TABLE, GET_TRANSFER_SUMMARY } from 'apollo/query';
+import { Party, Transfer, TransferSummary } from 'apollo/types';
 import { Collapse } from 'antd';
 import moment from 'moment';
 import { TransfersFilter, FilterChangeValue, DateRanges } from './types';
@@ -114,6 +114,8 @@ const dispatchProps = (dispatch: Dispatch) => ({
   onTransferSelect: (transfer: Transfer) => dispatch(actions.selectTransfer(transfer)),
   onFilterChange: (field: string, value: FilterChangeValue | string) =>
     dispatch(actions.setTransferFinderFilter({ field, value })),
+  onUpdateSelectedTransfer: (transfer: Transfer) =>
+    dispatch(actions.updateSelectedTransfer(transfer)),
 });
 
 interface ConnectorProps {
@@ -125,6 +127,7 @@ interface ConnectorProps {
   onClearFiltersClick: () => void;
   onTransferSelect: (transfer: Transfer) => void;
   onFilterChange: (field: string, value: FilterChangeValue | string) => void;
+  onUpdateSelectedTransfer: (transfer: Transfer) => void;
 }
 
 const DateFilters: FC<DateFiltersProps> = ({ model, onFilterChange, onClearFiltersClick }) => {
@@ -330,10 +333,26 @@ const Transfers: FC<ConnectorProps> = ({
   onClearFiltersClick,
   onTransferSelect,
   onFilterChange,
+  onUpdateSelectedTransfer,
 }) => {
   let content = null;
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { data: summaryData, loading: summaryLoading } = useQuery(GET_TRANSFER_SUMMARY, {
+    fetchPolicy: 'no-cache',
+    variables: {
+      startDate: filtersModel.from,
+      endDate: filtersModel.to,
+    },
+  });
+
+  const totalTransferCount: number = summaryData
+    ? summaryData.transferSummary.find((grp: TransferSummary) => grp.group.errorCode === null)
+        ?.count ?? 0
+    : 0;
+
   const [getTransfers, { loading, error, data }] = useLazyQuery(
-    filtersModel.transferId ? GET_TRANSFER : GET_TRANSFERS_WITH_EVENTS,
+    filtersModel.transferId ? GET_TRANSFER : GET_TRANSFERS_FOR_TABLE,
     {
       fetchPolicy: 'no-cache',
       variables: filtersModel.transferId
@@ -352,9 +371,25 @@ const Transfers: FC<ConnectorProps> = ({
             payerIdType: filtersModel.payerIdType,
             payeeIdentifier: filtersModel.payeeIdValue,
             payerIdentifier: filtersModel.payerIdValue,
+            limit: totalTransferCount,
           },
     },
   );
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [getTransferDetail, { data: detailData, loading: detailLoading }] = useLazyQuery(
+    GET_TRANSFER,
+    { fetchPolicy: 'no-cache' },
+  );
+  const handleSelectTransfer = (transfer: Transfer) => {
+    onTransferSelect(transfer);
+    getTransferDetail({ variables: { transferId: transfer.transferId } });
+  };
+  useEffect(() => {
+    if (detailData?.transfer) {
+      onUpdateSelectedTransfer(detailData.transfer);
+    }
+  }, [detailData, onUpdateSelectedTransfer]);
 
   if (error) {
     content = <MessageBox kind="danger">Error fetching transfers: {error.message}</MessageBox>;
@@ -376,7 +411,7 @@ const Transfers: FC<ConnectorProps> = ({
         pageSize={20}
         paginatorSize={7}
         flexible
-        onSelect={onTransferSelect}
+        onSelect={handleSelectTransfer}
       />
     );
   }
