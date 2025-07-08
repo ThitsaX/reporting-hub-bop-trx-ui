@@ -87,6 +87,12 @@ const slice = createSlice({
         transfersFilter: initialState.transfersFilter,
       };
     },
+    updateSelectedTransfer(state, action: PayloadAction<Transfer>) {
+      return {
+        ...state,
+        selectedTransfer: action.payload,
+      };
+    },
   },
 });
 

@@ -627,3 +627,30 @@ export const GET_TRANSFER_SUMMARY_BY_PAYEE_DFSP = gql`
     }
   }
 `;
+
+export const GET_TRANSFERS_FOR_TABLE = gql`
+  query GetTransfersForTable(
+    $startDate: DateTimeFlexible!
+    $endDate: DateTimeFlexible!
+    $limit: Int = 20
+    $offset: Int = 0
+  ) {
+    transfers(
+      limit: $limit
+      offset: $offset
+      filter: { startDate: $startDate, endDate: $endDate }
+    ) {
+      transferId
+      transferStateEnum
+      transactionType
+      sourceCurrency
+      sourceAmount
+      targetCurrency
+      targetAmount
+      payerDFSP
+      payeeDFSP
+      transferSettlementBatchId
+      createdAt
+    }
+  }
+`;
