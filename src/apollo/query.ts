@@ -632,13 +632,36 @@ export const GET_TRANSFERS_FOR_TABLE = gql`
   query GetTransfersForTable(
     $startDate: DateTimeFlexible!
     $endDate: DateTimeFlexible!
+    $transactionType: String
+    $transferState: String
+    $conversionState: String
+    $sourceCurrency: String
+    $targetCurrency: String
+    $payerFspId: String
+    $payeeFspId: String
+    $payerIdType: String
+    $payerIdentifier: String
+    $payeeIdType: String
+    $payeeIdentifier: String
     $limit: Int = 20
     $offset: Int = 0
   ) {
     transfers(
       limit: $limit
       offset: $offset
-      filter: { startDate: $startDate, endDate: $endDate }
+      filter: {
+        startDate: $startDate
+        endDate: $endDate
+        transactionType: $transactionType
+        transferState: $transferState
+        conversionState: $conversionState
+        sourceCurrency: $sourceCurrency
+        targetCurrency: $targetCurrency
+        payerDFSP: $payerFspId
+        payeeDFSP: $payeeFspId
+        payer: { partyIdType: $payerIdType, partyIdentifier: $payerIdentifier }
+        payee: { partyIdType: $payeeIdType, partyIdentifier: $payeeIdentifier }
+      }
     ) {
       transferId
       transferStateEnum
