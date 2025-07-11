@@ -14,8 +14,8 @@ import withMount from 'hocs';
 import { State, Dispatch } from 'store/types';
 import { ReduxContext } from 'store';
 import { useLazyQuery, useQuery } from '@apollo/client';
-import { GET_TRANSFER, GET_TRANSFERS_FOR_TABLE, GET_TRANSFER_SUMMARY } from 'apollo/query';
-import { Party, Transfer, TransferSummary } from 'apollo/types';
+import { GET_TRANSFER, GET_TRANSFERS_FOR_TABLE, GET_TRANSFER_SUMMARY_TOTAL } from 'apollo/query';
+import { Party, Transfer } from 'apollo/types';
 import { Collapse } from 'antd';
 import moment from 'moment';
 import { TransfersFilter, FilterChangeValue, DateRanges } from './types';
@@ -338,7 +338,7 @@ const Transfers: FC<ConnectorProps> = ({
   let content = null;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { data: summaryData, loading: summaryLoading } = useQuery(GET_TRANSFER_SUMMARY, {
+  const { data: summaryData, loading: summaryLoading } = useQuery(GET_TRANSFER_SUMMARY_TOTAL, {
     fetchPolicy: 'no-cache',
     variables: {
       startDate: filtersModel.from,
@@ -346,10 +346,8 @@ const Transfers: FC<ConnectorProps> = ({
     },
   });
 
-  const totalTransferCount: number = summaryData
-    ? summaryData.transferSummary.find((grp: TransferSummary) => grp.group.errorCode === null)
-        ?.count ?? 0
-    : 0;
+  let totalTransferCount: number = summaryData ? summaryData.transferSummary[0]?.count ?? 0 : 0; // Successful
+  totalTransferCount += summaryData ? summaryData.transferSummary[1]?.count ?? 0 : 0; // Error
 
   const [getTransfers, { loading, error, data }] = useLazyQuery(
     filtersModel.transferId ? GET_TRANSFER : GET_TRANSFERS_FOR_TABLE,
