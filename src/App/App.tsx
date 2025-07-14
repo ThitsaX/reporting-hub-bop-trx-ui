@@ -32,6 +32,7 @@ function App() {
     <div className="transfers-tracing-app">
       <Switch>
         <Route exact path={`${basePath}/`} component={Transfers} />
+        <Route path={`${basePath}/transfer/:transferId`} component={Transfers} />
         <Route path={`${basePath}/403`} component={ForbiddenRoute} />
       </Switch>
     </div>

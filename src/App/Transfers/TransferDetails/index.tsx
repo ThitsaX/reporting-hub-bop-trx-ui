@@ -9,6 +9,8 @@ import { State, Dispatch } from 'store/types';
 import { ReduxContext } from 'store';
 import { Transfer } from 'apollo/types';
 import moment from 'moment';
+import { useHistory } from 'react-router-dom';
+import { useBasePath } from 'App/hooks';
 import { actions } from '../slice';
 import * as selectors from '../selectors';
 import { JsonModalData, PartyType, PartyModalData } from '../types';
@@ -36,7 +38,14 @@ const TransferDetails: FC<ConnectorProps> = ({
   onsetJsonModalData,
   onsetPartyModalData,
 }) => {
+  const history = useHistory();
+  const basePath = useBasePath();
   const [copyColor, setCopyColor] = useState('#acacac');
+
+  const handleModalClose = () => {
+    onModalCloseClick();
+    history.push(basePath || '/');
+  };
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -1095,7 +1104,7 @@ const TransferDetails: FC<ConnectorProps> = ({
   );
 
   return (
-    <Modal title={`Transfer ${transferDetails.transferId} Details`} onClose={onModalCloseClick}>
+    <Modal title={`Transfer ${transferDetails.transferId} Details`} onClose={handleModalClose}>
       <div>
         <Tabs>
           <Tab>Transfer Details</Tab>

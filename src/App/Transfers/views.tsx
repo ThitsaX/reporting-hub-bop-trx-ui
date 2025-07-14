@@ -18,6 +18,8 @@ import { GET_TRANSFER, GET_TRANSFERS_FOR_TABLE, GET_TRANSFER_SUMMARY_TOTAL } fro
 import { Party, Transfer } from 'apollo/types';
 import { Collapse } from 'antd';
 import moment from 'moment';
+import { useHistory, useParams } from 'react-router-dom';
+import { useBasePath } from 'App/hooks';
 import { TransfersFilter, FilterChangeValue, DateRanges } from './types';
 import { actions } from './slice';
 import * as selectors from './selectors';
@@ -335,6 +337,9 @@ const Transfers: FC<ConnectorProps> = ({
   onFilterChange,
   onUpdateSelectedTransfer,
 }) => {
+  const history = useHistory();
+  const basePath = useBasePath();
+  const { transferId } = useParams<{ transferId?: string }>();
   let content = null;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -382,12 +387,23 @@ const Transfers: FC<ConnectorProps> = ({
   const handleSelectTransfer = (transfer: Transfer) => {
     onTransferSelect(transfer);
     getTransferDetail({ variables: { transferId: transfer.transferId } });
+    history.push(`${basePath}/transfer/${transfer.transferId}`);
   };
   useEffect(() => {
     if (detailData?.transfer) {
       onUpdateSelectedTransfer(detailData.transfer);
     }
   }, [detailData, onUpdateSelectedTransfer]);
+
+  // Handle URL-based transfer selection on mount/route change
+  useEffect(() => {
+    if (transferId && transferId !== valueTransfer?.transferId) {
+      getTransferDetail({ variables: { transferId } });
+    } else if (!transferId && valueTransfer) {
+      // Clear selected transfer if no transferId in URL
+      onTransferSelect(undefined as any);
+    }
+  }, [transferId, valueTransfer?.transferId, getTransferDetail, onTransferSelect]);
 
   if (error) {
     content = <MessageBox kind="danger">Error fetching transfers: {error.message}</MessageBox>;
@@ -425,7 +441,7 @@ const Transfers: FC<ConnectorProps> = ({
   }
 
   let detailModal = null;
-  if (valueTransfer) {
+  if (valueTransfer && transferId) {
     detailModal = <TransferDetailsModal />;
   }
 
