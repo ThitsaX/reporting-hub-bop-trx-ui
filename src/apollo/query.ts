@@ -675,5 +675,20 @@ export const GET_TRANSFERS_FOR_TABLE = gql`
       transferSettlementBatchId
       createdAt
     }
+    transfersCount(
+      filter: {
+        startDate: $startDate
+        endDate: $endDate
+        transactionType: $transactionType
+        transferState: $transferState
+        conversionState: $conversionState
+        sourceCurrency: $sourceCurrency
+        targetCurrency: $targetCurrency
+        payerDFSP: $payerFspId
+        payeeDFSP: $payeeFspId
+        payer: { partyIdType: $payerIdType, partyIdentifier: $payerIdentifier }
+        payee: { partyIdType: $payeeIdType, partyIdentifier: $payeeIdentifier }
+      }
+    )
   }
 `;

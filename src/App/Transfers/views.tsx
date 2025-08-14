@@ -1,14 +1,5 @@
-import React, { FC, useEffect } from 'react';
-import {
-  Heading,
-  Button,
-  MessageBox,
-  Spinner,
-  Table,
-  DatePicker,
-  TextField,
-  Select,
-} from 'components';
+import React, { FC, useEffect, useState } from 'react';
+import { Heading, Button, MessageBox, Spinner, DatePicker, TextField, Select } from 'components';
 import { connect } from 'react-redux';
 import withMount from 'hocs';
 import { State, Dispatch } from 'store/types';
@@ -16,7 +7,8 @@ import { ReduxContext } from 'store';
 import { useLazyQuery, useQuery } from '@apollo/client';
 import { GET_TRANSFER, GET_TRANSFERS_FOR_TABLE, GET_TRANSFER_SUMMARY_TOTAL } from 'apollo/query';
 import { Party, Transfer } from 'apollo/types';
-import { Collapse } from 'antd';
+import { Collapse, Pagination } from 'antd';
+import { CaretUpOutlined, CaretDownOutlined } from '@ant-design/icons';
 import moment from 'moment';
 import { TransfersFilter, FilterChangeValue, DateRanges } from './types';
 import { actions } from './slice';
@@ -31,33 +23,46 @@ import { dateRanges, partyIdTypeOptions, transferStateOptions } from './constant
 const { Panel } = Collapse;
 const transfersColumns = [
   {
+    label: '#',
+    key: 'rowNumber',
+    minWidth: 60,
+    sortable: false,
+  },
+  {
     label: 'Transfer ID',
     key: 'transferId',
     minWidth: 150,
+    sortable: true,
   },
   {
     label: 'State',
     key: 'transferStateEnum',
+    sortable: true,
   },
   {
     label: 'Type',
     key: 'transactionType',
+    sortable: true,
   },
   {
     label: 'Source Currency',
     key: 'sourceCurrency',
+    sortable: true,
   },
   {
     label: 'Source Amount',
     key: 'sourceAmount',
+    sortable: true,
   },
   {
     label: 'Target Currency',
     key: 'targetCurrency',
+    sortable: true,
   },
   {
     label: 'Target Amount',
     key: 'targetAmount',
+    sortable: true,
     fn: (rawValue: Number) => {
       return `${rawValue ? rawValue.toString() : ''}`;
     },
@@ -68,6 +73,7 @@ const transfersColumns = [
   {
     label: 'Payer DFSP',
     key: 'payerDFSP',
+    sortable: true,
     fn: (rawValue: string) => {
       return rawValue || '';
     },
@@ -75,6 +81,7 @@ const transfersColumns = [
   {
     label: 'Payee DFSP',
     key: 'payeeDFSP',
+    sortable: true,
     fn: (rawValue: string) => {
       return rawValue || '';
     },
@@ -82,6 +89,7 @@ const transfersColumns = [
   {
     label: 'Settlement Batch',
     key: 'transferSettlementBatchId',
+    sortable: true,
     fn: (rawValue: Number) => {
       return `${rawValue ? rawValue.toString() : ''}`;
     },
@@ -89,6 +97,7 @@ const transfersColumns = [
   {
     label: 'Date Submitted',
     key: 'createdAt',
+    sortable: true,
     fn: (rawValue: Number) => {
       return rawValue ? moment(rawValue.toString()).local().format() : '';
     },
@@ -346,8 +355,15 @@ const Transfers: FC<ConnectorProps> = ({
     },
   });
 
-  let totalTransferCount: number = summaryData ? summaryData.transferSummary[0]?.count ?? 0 : 0; // Successful
-  totalTransferCount += summaryData ? summaryData.transferSummary[1]?.count ?? 0 : 0; // Error
+  const [pagination, setPagination] = useState({
+    offset: 0,
+    limit: 20,
+  });
+
+  const [sortConfig, setSortConfig] = useState({
+    key: '',
+    direction: 'asc',
+  });
 
   const [getTransfers, { loading, error, data }] = useLazyQuery(
     filtersModel.transferId ? GET_TRANSFER : GET_TRANSFERS_FOR_TABLE,
@@ -369,10 +385,14 @@ const Transfers: FC<ConnectorProps> = ({
             payerIdType: filtersModel.payerIdType,
             payeeIdentifier: filtersModel.payeeIdValue,
             payerIdentifier: filtersModel.payerIdValue,
-            limit: totalTransferCount,
+            limit: pagination.limit, // FIX: Use pagination limit
+            offset: pagination.offset, // FIX: Add offset
           },
     },
   );
+
+  // Get total count from the filtered transfers query (when available), fallback to 0
+  const totalTransferCount: number = data?.transfersCount ?? 0;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [getTransferDetail, { data: detailData, loading: detailLoading }] = useLazyQuery(
@@ -383,11 +403,26 @@ const Transfers: FC<ConnectorProps> = ({
     onTransferSelect(transfer);
     getTransferDetail({ variables: { transferId: transfer.transferId } });
   };
+
+  const handleSort = (columnKey: string) => {
+    let direction = 'asc';
+    if (sortConfig.key === columnKey && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key: columnKey, direction });
+  };
   useEffect(() => {
     if (detailData?.transfer) {
       onUpdateSelectedTransfer(detailData.transfer);
     }
   }, [detailData, onUpdateSelectedTransfer]);
+
+  // Trigger refetch when pagination changes
+  useEffect(() => {
+    if (pagination.offset > 0 || filtersModel.from) {
+      getTransfers();
+    }
+  }, [pagination.offset, pagination.limit]);
 
   if (error) {
     content = <MessageBox kind="danger">Error fetching transfers: {error.message}</MessageBox>;
@@ -402,15 +437,107 @@ const Transfers: FC<ConnectorProps> = ({
     } else {
       rows = [];
     }
+
+    // Apply sorting if a sort configuration is set
+    if (sortConfig.key && rows.length > 0) {
+      rows = [...rows].sort((a, b) => {
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
+
+        if (aValue === null || aValue === undefined) return 1;
+        if (bValue === null || bValue === undefined) return -1;
+
+        let comparison = 0;
+        if (aValue > bValue) comparison = 1;
+        if (aValue < bValue) comparison = -1;
+        return sortConfig.direction === 'desc' ? comparison * -1 : comparison;
+      });
+    }
     content = (
-      <Table
-        columns={transfersColumns}
-        rows={rows}
-        pageSize={20}
-        paginatorSize={7}
-        flexible
-        onSelect={handleSelectTransfer}
-      />
+      <div className="transfers-table-container">
+        <table className="transfers-table">
+          <thead>
+            <tr>
+              {transfersColumns.map((col) => (
+                <th
+                  key={col.key}
+                  style={{ minWidth: col.minWidth }}
+                  className={col.sortable ? 'sortable-header' : ''}
+                  onClick={() => col.sortable && handleSort(col.key)}
+                >
+                  <div className="header-content">
+                    {col.label}
+                    {col.sortable && (
+                      <div className="sort-indicators">
+                        <CaretUpOutlined
+                          className={`sort-icon ${
+                            sortConfig.key === col.key && sortConfig.direction === 'asc'
+                              ? 'active'
+                              : ''
+                          }`}
+                        />
+                        <CaretDownOutlined
+                          className={`sort-icon ${
+                            sortConfig.key === col.key && sortConfig.direction === 'desc'
+                              ? 'active'
+                              : ''
+                          }`}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row: any, index: number) => {
+              const rowNumber = pagination.offset + index + 1;
+              return (
+                <tr
+                  key={row.transferId}
+                  onClick={() => handleSelectTransfer(row)}
+                  className="transfers-table-row"
+                >
+                  {transfersColumns.map((col) => {
+                    if (col.key === 'rowNumber') {
+                      return <td key={col.key}>{rowNumber}</td>;
+                    }
+                    return (
+                      <td key={col.key}>{col.fn ? col.fn(row[col.key]) : row[col.key] || ''}</td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <div className="transfers-pagination">
+          <Pagination
+            current={Math.floor(pagination.offset / pagination.limit) + 1}
+            total={totalTransferCount}
+            pageSize={pagination.limit}
+            showSizeChanger
+            showQuickJumper
+            showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} transfers`}
+            pageSizeOptions={['20', '50', '100', '200']}
+            onChange={(page, pageSize) => {
+              const newPagination = {
+                offset: (page - 1) * (pageSize || pagination.limit),
+                limit: pageSize || pagination.limit,
+              };
+              setPagination(newPagination);
+            }}
+            onShowSizeChange={(current, size) => {
+              const newPagination = {
+                offset: 0, // Reset to first page when changing page size
+                limit: size,
+              };
+              setPagination(newPagination);
+            }}
+          />
+        </div>
+      </div>
     );
   }
 
