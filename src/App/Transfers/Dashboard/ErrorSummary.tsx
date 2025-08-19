@@ -1,4 +1,4 @@
-import { GET_TRANSFER_SUMMARY } from 'apollo/query';
+import { GET_TRANSFER_TOTALS } from 'apollo/query';
 import React, { FC } from 'react';
 import { connect } from 'react-redux';
 import { Dispatch, ReduxContext, State } from 'store';
@@ -6,7 +6,6 @@ import { MessageBox, Spinner } from 'components';
 import { useQuery } from '@apollo/client';
 import { Statistic, Typography } from 'antd';
 import { round } from 'lodash';
-import { TransferSummary } from 'apollo/types';
 import { FilterChangeValue, TransfersFilter } from '../types';
 import { actions } from '../slice';
 import * as selectors from '../selectors';
@@ -28,7 +27,7 @@ interface ConnectorProps {
 }
 
 const ErrorSummary: FC<ConnectorProps> = ({ filtersModel }) => {
-  const { loading, error, data } = useQuery(GET_TRANSFER_SUMMARY, {
+  const { loading, error, data } = useQuery(GET_TRANSFER_TOTALS, {
     fetchPolicy: 'no-cache',
     variables: {
       startDate: filtersModel.from,
@@ -43,13 +42,9 @@ const ErrorSummary: FC<ConnectorProps> = ({ filtersModel }) => {
   } else if (loading) {
     content = <Spinner center />;
   } else {
-    const totalTransactionCount = data.transferSummary.reduce(
-      (total: number, { count }: TransferSummary) => total + count,
-      0,
-    );
-    const totalErrorCount = data.transferSummary
-      .filter((obj: TransferSummary) => obj.group.errorCode !== null)
-      .reduce((total: number, { count }: TransferSummary) => total + count, 0);
+    const totalTransactionCount: number = data?.total?.[0]?.count ?? 0;
+    const committedCount: number = data?.committed?.[0]?.count ?? 0;
+    const totalErrorCount = Math.max(totalTransactionCount - committedCount, 0);
     const errorPercentage =
       totalTransactionCount > 0 ? (totalErrorCount / totalTransactionCount) * 100 : 0;
 

@@ -1,10 +1,9 @@
-import { GET_TRANSFER_SUMMARY } from 'apollo/query';
+import { GET_TRANSFER_TOTALS } from 'apollo/query';
 import React, { FC } from 'react';
 import { connect } from 'react-redux';
 import { Dispatch, ReduxContext, State } from 'store';
 import { MessageBox, Spinner } from 'components';
 import { useQuery } from '@apollo/client';
-import { TransferSummary } from 'apollo/types';
 import { Statistic, Typography } from 'antd';
 import { useRouteMatch, useHistory } from 'react-router-dom';
 import { ErrorMessage, FilterChangeValue, TransfersFilter } from '../types';
@@ -28,7 +27,7 @@ interface ConnectorProps {
 }
 
 const TransferTotalSummary: FC<ConnectorProps> = ({ filtersModel }) => {
-  const { loading, error, data } = useQuery(GET_TRANSFER_SUMMARY, {
+  const { loading, error, data } = useQuery(GET_TRANSFER_TOTALS, {
     fetchPolicy: 'no-cache',
     variables: {
       startDate: filtersModel.from,
@@ -47,11 +46,7 @@ const TransferTotalSummary: FC<ConnectorProps> = ({ filtersModel }) => {
   } else if (loading) {
     content = <Spinner center />;
   } else {
-    const successfulTransferGroup = data.transferSummary.find(
-      (obj: TransferSummary) => obj.group.errorCode === null,
-    );
-
-    const totalTransferCount = successfulTransferGroup ? successfulTransferGroup.count : 0;
+    const committedCount: number = data?.committed?.[0]?.count ?? 0;
 
     content = (
       <div className="transfer-summary">
@@ -59,7 +54,7 @@ const TransferTotalSummary: FC<ConnectorProps> = ({ filtersModel }) => {
           value={new Intl.NumberFormat('en-GB', {
             notation: 'compact',
             compactDisplay: 'short',
-          }).format(totalTransferCount)}
+          }).format(committedCount)}
         />
         <Text type="secondary">Total Successful Transfers</Text>
       </div>

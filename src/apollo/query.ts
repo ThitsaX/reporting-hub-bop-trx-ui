@@ -628,6 +628,153 @@ export const GET_TRANSFER_SUMMARY_BY_PAYEE_DFSP = gql`
   }
 `;
 
+export const GET_ERROR_SUMMARY_BY_PAYER = gql`
+  query GetErrorSummaryByPayer(
+    $limit: Int = 100
+    $offset: Int = 0
+    $startDate: DateTimeFlexible!
+    $endDate: DateTimeFlexible!
+  ) {
+    transferSummary(
+      limit: $limit
+      offset: $offset
+      filter: { startDate: $startDate, endDate: $endDate }
+      groupBy: ["transferState", "payerDFSP"]
+    ) {
+      count
+      group {
+        transferState
+        payerDFSP
+      }
+      sum {
+        sourceAmount
+        targetAmount
+      }
+    }
+  }
+`;
+
+export const GET_ERROR_SUMMARY_BY_PAYEE = gql`
+  query GetErrorSummaryByPayee(
+    $limit: Int = 100
+    $offset: Int = 0
+    $startDate: DateTimeFlexible!
+    $endDate: DateTimeFlexible!
+  ) {
+    transferSummary(
+      limit: $limit
+      offset: $offset
+      filter: { startDate: $startDate, endDate: $endDate }
+      groupBy: ["transferState", "payeeDFSP"]
+    ) {
+      count
+      group {
+        transferState
+        payeeDFSP
+      }
+      sum {
+        sourceAmount
+        targetAmount
+      }
+    }
+  }
+`;
+
+export const GET_ERROR_SUMMARY_BY_SOURCE_CURRENCY = gql`
+  query GetErrorSummaryBySourceCurrency(
+    $limit: Int = 100
+    $offset: Int = 0
+    $startDate: DateTimeFlexible!
+    $endDate: DateTimeFlexible!
+  ) {
+    transferSummary(
+      limit: $limit
+      offset: $offset
+      filter: { startDate: $startDate, endDate: $endDate }
+      groupBy: ["sourceCurrency", "transferState"]
+    ) {
+      count
+      group {
+        sourceCurrency
+        transferState
+      }
+      sum {
+        sourceAmount
+        targetAmount
+      }
+    }
+  }
+`;
+
+export const GET_ERROR_SUMMARY_BY_TARGET_CURRENCY = gql`
+  query GetErrorSummaryByTargetCurrency(
+    $limit: Int = 100
+    $offset: Int = 0
+    $startDate: DateTimeFlexible!
+    $endDate: DateTimeFlexible!
+  ) {
+    transferSummary(
+      limit: $limit
+      offset: $offset
+      filter: { startDate: $startDate, endDate: $endDate }
+      groupBy: ["targetCurrency", "transferState"]
+    ) {
+      count
+      group {
+        targetCurrency
+        transferState
+      }
+      sum {
+        sourceAmount
+        targetAmount
+      }
+    }
+  }
+`;
+
+export const GET_ERROR_SUMMARY_BY_ERROR_CODE = gql`
+  query GetErrorSummaryByErrorCode(
+    $limit: Int = 100
+    $offset: Int = 0
+    $startDate: DateTimeFlexible!
+    $endDate: DateTimeFlexible!
+  ) {
+    transferSummary(
+      limit: $limit
+      offset: $offset
+      filter: { startDate: $startDate, endDate: $endDate }
+      groupBy: ["errorCode", "transferState"]
+    ) {
+      count
+      group {
+        errorCode
+        transferState
+      }
+    }
+  }
+`;
+
+export const GET_TRANSFER_TOTALS = gql`
+  query GetTransferTotals($startDate: DateTimeFlexible!, $endDate: DateTimeFlexible!) {
+    total: transferSummary(filter: { startDate: $startDate, endDate: $endDate }) {
+      count
+      sum {
+        sourceAmount
+        targetAmount
+      }
+    }
+    committed: transferSummary(
+      filter: { startDate: $startDate, endDate: $endDate, transferState: "COMMITTED" }
+    ) {
+      count
+      sum {
+        sourceAmount
+        targetAmount
+      }
+    }
+  }
+`;
+
 export const GET_TRANSFERS_FOR_TABLE = gql`
   query GetTransfersForTable(
     $startDate: DateTimeFlexible!

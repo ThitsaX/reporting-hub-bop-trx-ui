@@ -4,8 +4,8 @@ import { Cell, Legend, Pie, PieChart, Tooltip } from 'recharts';
 import { ReduxContext, State } from 'store';
 import { MessageBox, Spinner } from 'components';
 import { useQuery } from '@apollo/client';
-import { TransferSummary } from 'apollo/types';
-import { GET_TRANSFER_SUMMARY } from 'apollo/query';
+import { TransferState, TransferSummary } from 'apollo/types';
+import { GET_ERROR_SUMMARY_BY_SOURCE_CURRENCY } from 'apollo/query';
 import * as selectors from '../selectors';
 import { TransfersFilter } from '../types';
 import { RED_CHART_GRADIENT_COLORS, renderActiveShape, renderRedLegend } from './utils';
@@ -18,7 +18,7 @@ interface ConnectorProps {
   filtersModel: TransfersFilter;
 }
 const BySourceCurrencyChart: FC<ConnectorProps> = ({ filtersModel }) => {
-  const { loading, error, data } = useQuery(GET_TRANSFER_SUMMARY, {
+  const { loading, error, data } = useQuery(GET_ERROR_SUMMARY_BY_SOURCE_CURRENCY, {
     fetchPolicy: 'no-cache',
     variables: {
       startDate: filtersModel.from,
@@ -38,25 +38,27 @@ const BySourceCurrencyChart: FC<ConnectorProps> = ({ filtersModel }) => {
   } else if (loading) {
     content = <Spinner center />;
   } else {
-    const summary = data.transferSummary
-      .filter((obj: TransferSummary) => {
-        return obj.errorCode !== null;
-      })
-      .slice()
-      .sort((a: TransferSummary, b: TransferSummary) => b.count - a.count);
-    const topThree = summary.slice(0, 3);
-    const remainingSummary = {
-      errorCode: 'Other',
-      count: summary.slice(3).reduce((n: number, { count }: TransferSummary) => n + count, 0),
-    };
-    if (remainingSummary.count > 0) {
-      topThree.push(remainingSummary);
-    }
+    const grouped: Record<string, number> = data.transferSummary
+      .filter((obj: TransferSummary) => obj.group.transferState !== TransferState.Committed)
+      .reduce((acc: Record<string, number>, cur: TransferSummary) => {
+        const c = cur.group.sourceCurrency;
+        if (!c) return acc;
+        acc[c] = (acc[c] || 0) + cur.count;
+        return acc;
+      }, {});
+
+    const sorted = Object.entries(grouped)
+      .map(([sourceCurrency, count]) => ({ sourceCurrency, count }))
+      .sort((a, b) => b.count - a.count);
+    const topThree = sorted.slice(0, 3);
+    const otherCount = sorted.slice(3).reduce((n, x) => n + x.count, 0);
+    if (otherCount > 0) topThree.push({ sourceCurrency: 'Other', count: otherCount });
+
     content = (
       <PieChart id="ErrorsBySourceCurrencyChart" width={300} height={120}>
         <Legend
           id="ErrorsBySourceCurrencyLegend"
-          name="Source Error Code"
+          name="Source Currency"
           layout="vertical"
           verticalAlign="middle"
           align="right"
@@ -68,7 +70,7 @@ const BySourceCurrencyChart: FC<ConnectorProps> = ({ filtersModel }) => {
         <Pie
           data={topThree}
           dataKey="count"
-          nameKey="errorCode"
+          nameKey="sourceCurrency"
           innerRadius={30}
           outerRadius={50}
           blendStroke
@@ -79,7 +81,7 @@ const BySourceCurrencyChart: FC<ConnectorProps> = ({ filtersModel }) => {
         >
           {topThree.map((_entry: any, index: number) => (
             <Cell
-              key={`${_entry.errorCode}`}
+              key={`${_entry.sourceCurrency}`}
               fill={RED_CHART_GRADIENT_COLORS[index % RED_CHART_GRADIENT_COLORS.length]}
             />
           ))}

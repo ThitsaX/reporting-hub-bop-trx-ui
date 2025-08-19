@@ -1,11 +1,11 @@
 import { useQuery } from '@apollo/client';
-import { TransferSummary } from 'apollo/types';
+import { TransferState, TransferSummary } from 'apollo/types';
 import { MessageBox, Spinner } from 'components';
 import React, { FC, useState } from 'react';
 import { connect } from 'react-redux';
 import { Cell, Legend, Pie, PieChart, Tooltip } from 'recharts';
 import { ReduxContext, State, Dispatch } from 'store';
-import { GET_TRANSFER_SUMMARY_BY_PAYEE } from 'apollo/query';
+import { GET_ERROR_SUMMARY_BY_PAYEE } from 'apollo/query';
 import { map, groupBy, sumBy } from 'lodash';
 import { FilterChangeValue, TransfersFilter } from '../types';
 import { actions } from '../slice';
@@ -27,7 +27,7 @@ interface ConnectorProps {
 }
 
 const ByPayeeChart: FC<ConnectorProps> = ({ filtersModel, onFilterChange }) => {
-  const { loading, error, data } = useQuery(GET_TRANSFER_SUMMARY_BY_PAYEE, {
+  const { loading, error, data } = useQuery(GET_ERROR_SUMMARY_BY_PAYEE, {
     fetchPolicy: 'no-cache',
     variables: {
       startDate: filtersModel.from,
@@ -53,7 +53,9 @@ const ByPayeeChart: FC<ConnectorProps> = ({ filtersModel, onFilterChange }) => {
   } else {
     const groupedSummary = map(
       groupBy(
-        data.transferSummary.filter((obj: TransferSummary) => obj.group.errorCode !== null),
+        data.transferSummary.filter(
+          (obj: TransferSummary) => obj.group.transferState !== TransferState.Committed,
+        ),
         (item: TransferSummary) => item.group.payeeDFSP,
       ),
       (groupedItems, payeeDFSP) => ({

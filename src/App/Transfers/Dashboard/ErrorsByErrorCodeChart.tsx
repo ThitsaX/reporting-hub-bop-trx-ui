@@ -4,8 +4,8 @@ import { Cell, Legend, Pie, PieChart, Tooltip } from 'recharts';
 import { ReduxContext, State } from 'store';
 import { MessageBox, Spinner } from 'components';
 import { useQuery } from '@apollo/client';
-import { TransferSummary } from 'apollo/types';
-import { GET_TRANSFER_SUMMARY } from 'apollo/query';
+import { TransferState, TransferSummary } from 'apollo/types';
+import { GET_ERROR_SUMMARY_BY_ERROR_CODE } from 'apollo/query';
 import * as selectors from '../selectors';
 import { TransfersFilter } from '../types';
 import { RED_CHART_GRADIENT_COLORS, renderActiveShape, renderRedLegend } from './utils';
@@ -21,7 +21,7 @@ interface ConnectorProps {
 }
 
 const ByCurrencyChart: FC<ConnectorProps> = ({ filtersModel }) => {
-  const { loading, error, data } = useQuery(GET_TRANSFER_SUMMARY, {
+  const { loading, error, data } = useQuery(GET_ERROR_SUMMARY_BY_ERROR_CODE, {
     fetchPolicy: 'no-cache',
     variables: {
       startDate: filtersModel.from,
@@ -46,13 +46,17 @@ const ByCurrencyChart: FC<ConnectorProps> = ({ filtersModel }) => {
   } else if (loading) {
     content = <Spinner center />;
   } else {
-    const summary = data.transferSummary
-      .filter((obj: TransferSummary) => obj.group.errorCode !== null)
-      .map((obj: TransferSummary) => ({
-        errorCode: obj.group.errorCode,
-        count: obj.count,
-      }))
-      .sort((a: TransferSummary, b: TransferSummary) => b.count - a.count);
+    const grouped: Record<string, number> = data.transferSummary
+      .filter((obj: TransferSummary) => obj.group.transferState !== TransferState.Committed)
+      .reduce((acc: Record<string, number>, cur: TransferSummary) => {
+        const code = cur.group.errorCode ?? 'NoErrorCode';
+        acc[code] = (acc[code] || 0) + cur.count;
+        return acc;
+      }, {});
+
+    const summary = Object.entries(grouped)
+      .map(([errorCode, count]) => ({ errorCode, count }))
+      .sort((a, b) => b.count - a.count);
 
     const topThree = summary.slice(0, 3);
     const remainingSummary = {
